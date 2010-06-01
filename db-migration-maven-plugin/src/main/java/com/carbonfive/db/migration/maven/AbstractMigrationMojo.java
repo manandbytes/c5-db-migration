@@ -5,6 +5,7 @@ import com.carbonfive.db.jdbc.DatabaseUtils;
 import com.carbonfive.db.migration.DriverManagerMigrationManager;
 import com.carbonfive.db.migration.ResourceMigrationResolver;
 import com.carbonfive.db.migration.SimpleVersionStrategy;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
@@ -109,6 +110,15 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
         }
     }
 
+    /**
+     * Set this to <code>true</code> to insert base name of the migration script
+     * (filename without extension) as its ID into column defined by
+     * {@link #versionColumn} parameter.
+     *
+     * @parameter
+     */
+    private Boolean baseNameAsId = false;
+
     public DriverManagerMigrationManager createMigrationManager()
     {
         DriverManagerMigrationManager manager = new DriverManagerMigrationManager(driver, url, username, password, DatabaseType.valueOf(databaseType));
@@ -126,6 +136,10 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
         path = separatorsToUnix(path);
 
         final ResourceMigrationResolver migrationResolver = new ResourceMigrationResolver(path);
+        if (baseNameAsId)
+        {
+            migrationResolver.setVersionExtractor(new BaseNameVersionExtractor());
+        }
         manager.setMigrationResolver(migrationResolver);
 
         SimpleVersionStrategy strategy = new SimpleVersionStrategy();
