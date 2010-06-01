@@ -125,7 +125,8 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
         }
         path = separatorsToUnix(path);
 
-        manager.setMigrationResolver(new ResourceMigrationResolver(path));
+        final ResourceMigrationResolver migrationResolver = new ResourceMigrationResolver(path);
+        manager.setMigrationResolver(migrationResolver);
 
         SimpleVersionStrategy strategy = new SimpleVersionStrategy();
         strategy.setVersionTable(defaultIfEmpty(versionTable, SimpleVersionStrategy.DEFAULT_VERSION_TABLE));
