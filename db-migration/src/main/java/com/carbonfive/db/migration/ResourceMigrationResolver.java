@@ -31,11 +31,11 @@ import static org.springframework.util.StringUtils.collectionToCommaDelimitedStr
  */
 public class ResourceMigrationResolver implements MigrationResolver
 {
-    private static final String CLASSPATH_MIGRATIONS_SQL = "classpath:/db/migrations/";
+    private static final Collection<String> CLASSPATH_MIGRATIONS_SQL = Arrays.asList("classpath:/db/migrations/");
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private String migrationsLocation;
+    private Collection<String> migrationsLocations;
     private VersionExtractor versionExtractor;
     private MigrationFactory migrationFactory = new MigrationFactory();
 
@@ -46,12 +46,23 @@ public class ResourceMigrationResolver implements MigrationResolver
 
     public ResourceMigrationResolver(String migrationsLocation)
     {
+        this(Arrays.asList(migrationsLocation), new SimpleVersionExtractor());
+    }
+
+    public ResourceMigrationResolver(Collection<String> migrationsLocation)
+    {
         this(migrationsLocation, new SimpleVersionExtractor());
+    }
+
+    public ResourceMigrationResolver(Collection<String> migrationsLocation, VersionExtractor versionExtractor)
+    {
+        setMigrationsLocations(migrationsLocation);
+        setVersionExtractor(versionExtractor);
     }
 
     public ResourceMigrationResolver(String migrationsLocation, VersionExtractor versionExtractor)
     {
-        setMigrationsLocation(migrationsLocation);
+        this(migrationsLocation);
         setVersionExtractor(versionExtractor);
     }
 
@@ -59,19 +70,7 @@ public class ResourceMigrationResolver implements MigrationResolver
     {
         Set<Migration> migrations = new HashSet<Migration>();
 
-        // Find all resources in the migrations location.
-        String convertedMigrationsLocation = convertMigrationsLocation(migrationsLocation, dbType);
-
-        PathMatchingResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
-        List<Resource> resources;
-        try
-        {
-            resources = new ArrayList<Resource>(Arrays.asList(patternResolver.getResources(convertedMigrationsLocation)));
-        }
-        catch (IOException e)
-        {
-            throw new MigrationException(e);
-        }
+        final List<Resource> resources = findResources(dbType);
 
         // Remove resources starting with a '.' (e.g. .svn, .cvs, etc)
         CollectionUtils.filter(resources, new Predicate()
@@ -95,7 +94,7 @@ public class ResourceMigrationResolver implements MigrationResolver
 
         if (resources.isEmpty())
         {
-            String message = "No migrations were found using resource pattern '" + migrationsLocation + "'.";
+            String message = "No migrations were found using resource pattern '" + migrationsLocations + "'.";
             logger.error(message);
             throw new MigrationException(message);
         }
@@ -119,6 +118,32 @@ public class ResourceMigrationResolver implements MigrationResolver
         }
 
         return migrations;
+    }
+
+    /**
+     * Find all resources in all migrations locations
+     *
+     * @param dbType
+     * @return all resources in the migrations location
+     * @see #setMigrationsLocations(Collection)
+     */
+    private List<Resource> findResources(DatabaseType dbType)
+    {
+        final List<Resource> resources = new ArrayList<Resource>();
+        for (String location : migrationsLocations)
+        {
+            String convertedMigrationsLocation = convertMigrationsLocation(location, dbType);
+
+            PathMatchingResourcePatternResolver patternResolver = new PathMatchingResourcePatternResolver();
+            try
+            {
+                resources.addAll(Arrays.asList(patternResolver.getResources(convertedMigrationsLocation)));
+            } catch (IOException e)
+            {
+                throw new MigrationException(e);
+            }
+        }
+        return resources;
     }
 
     public Set<Migration> resolve()
@@ -150,7 +175,12 @@ public class ResourceMigrationResolver implements MigrationResolver
 
     public void setMigrationsLocation(String migrationsLocation)
     {
-        this.migrationsLocation = migrationsLocation;
+        setMigrationsLocations(Arrays.asList(migrationsLocation));
+    }
+
+    public void setMigrationsLocations(Collection<String> migrationsLocation)
+    {
+        this.migrationsLocations = migrationsLocation;
     }
 
     public void setVersionExtractor(VersionExtractor versionExtractor)

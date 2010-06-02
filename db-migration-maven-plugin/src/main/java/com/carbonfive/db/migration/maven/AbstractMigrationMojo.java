@@ -1,5 +1,10 @@
 package com.carbonfive.db.migration.maven;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+
 import com.carbonfive.db.jdbc.DatabaseType;
 import com.carbonfive.db.jdbc.DatabaseUtils;
 import com.carbonfive.db.migration.DriverManagerMigrationManager;
@@ -33,8 +38,19 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
     /** @parameter */
     private String databaseType;
 
-    /** @parameter */
+    /**
+     * Location of migrations
+     *
+     * @parameter
+     */
     private String migrationsPath = "src/main/db/migrations/";
+
+    /**
+     * Multiple locations of migrations
+     *
+     * @parameter
+     */
+    private List<String> migrationsPaths = Arrays.asList(migrationsPath);
 
     /** @parameter */
     private String versionTable;
@@ -113,19 +129,21 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
     {
         DriverManagerMigrationManager manager = new DriverManagerMigrationManager(driver, url, username, password, DatabaseType.valueOf(databaseType));
 
-        String path = migrationsPath;
-
-        if (path.startsWith("file:"))
+        final Collection<String> paths = new LinkedList<String>();
+        for (String path : migrationsPaths)
         {
-            path = substring(path, 5);
+            if (path.startsWith("file:"))
+            {
+                path = substring(path, 5);
+            }
+            if (!path.startsWith("classpath:") && !path.startsWith("\"") && !path.startsWith("/"))
+            {
+                path = project.getBasedir().getAbsolutePath() + "/" + path;
+            }
+            paths.add(separatorsToUnix(path));
         }
-        if (!path.startsWith("classpath:") && !path.startsWith("\"") && !path.startsWith("/"))
-        {
-            path = project.getBasedir().getAbsolutePath() + "/" + path;
-        }
-        path = separatorsToUnix(path);
 
-        manager.setMigrationResolver(new ResourceMigrationResolver(path));
+        manager.setMigrationResolver(new ResourceMigrationResolver(paths));
 
         SimpleVersionStrategy strategy = new SimpleVersionStrategy();
         strategy.setVersionTable(defaultIfEmpty(versionTable, SimpleVersionStrategy.DEFAULT_VERSION_TABLE));
