@@ -16,7 +16,7 @@ public class ValidateMojo extends AbstractMigrationMojo
 {
     public void executeMojo() throws MojoExecutionException
     {
-        getLog().info("Validating " + getUrl() + " using migrations at " + getMigrationsPath() + ".");
+        getLog().info("Validating " + getUrl() + " using migrations at " + getMigrationsPaths() + ".");
 
         try
         {

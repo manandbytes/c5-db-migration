@@ -12,7 +12,7 @@ public class MigrateMojo extends AbstractMigrationMojo
 {
     public void executeMojo() throws MojoExecutionException
     {
-        getLog().info("Migrating " + getUrl() + " using migrations at " + getMigrationsPath() + ".");
+        getLog().info("Migrating " + getUrl() + " using migrations at " + getMigrationsPaths() + ".");
 
         try
         {

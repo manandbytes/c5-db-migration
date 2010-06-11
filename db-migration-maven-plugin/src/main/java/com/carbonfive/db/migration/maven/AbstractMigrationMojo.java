@@ -52,6 +52,10 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
      */
     private List<String> migrationsPaths = Arrays.asList(migrationsPath);
 
+    public List<String> getMigrationsPaths() {
+        return migrationsPaths;
+    }
+
     /** @parameter */
     private String versionTable;
     /** @parameter */

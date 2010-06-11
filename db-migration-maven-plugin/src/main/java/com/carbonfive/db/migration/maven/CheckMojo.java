@@ -24,7 +24,7 @@ public class CheckMojo extends AbstractMigrationMojo
 {
     public void executeMojo() throws MojoExecutionException
     {
-        getLog().info("Checking " + getUrl() + " using migrations at " + getMigrationsPath() + ".");
+        getLog().info("Checking " + getUrl() + " using migrations at " + getMigrationsPaths() + ".");
 
         Set<Migration> pendingMigrations;
         try

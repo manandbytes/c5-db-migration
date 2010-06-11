@@ -3,6 +3,7 @@ package com.carbonfive.db.migration.maven;
 import org.apache.maven.plugin.testing.*;
 
 import java.io.*;
+import java.util.Arrays;
 
 public class MigrateMojoTest extends AbstractMojoTestCase
 {
@@ -22,6 +23,6 @@ public class MigrateMojoTest extends AbstractMojoTestCase
         assertEquals("jdbc:h2:mem:maven-migration-plugin;DB_CLOSE_DELAY=-1", mojo.getUrl());
         assertEquals("root", mojo.getUsername());
         assertEquals("", mojo.getPassword());
-        assertEquals("src/main/db/migrations/", mojo.getMigrationsPath());
+        assertEquals(Arrays.asList("src/main/db/migrations/"), mojo.getMigrationsPaths());
     }
 }
