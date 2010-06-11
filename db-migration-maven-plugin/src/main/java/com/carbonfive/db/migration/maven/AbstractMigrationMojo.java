@@ -184,11 +184,6 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
         return databaseType;
     }
 
-    public String getMigrationsPath()
-    {
-        return migrationsPath;
-    }
-
     public String getVersionTable()
     {
         return versionTable;

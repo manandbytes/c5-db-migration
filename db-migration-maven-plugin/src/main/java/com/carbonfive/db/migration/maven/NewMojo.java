@@ -30,7 +30,7 @@ public class NewMojo extends AbstractMigrationMojo
 
     public void executeMojo() throws MojoExecutionException
     {
-        String directory = getMigrationsPath();
+        String directory = getMigrationsPaths().get(0);
 
         // Remove and handle spring prefixes
         directory = StringUtils.remove(directory, "file:");
@@ -113,5 +113,16 @@ public class NewMojo extends AbstractMigrationMojo
     public String getMigrationExtension()
     {
         return migrationExtension;
+    }
+
+    @Override
+    protected void validateConfiguration() throws MojoExecutionException {
+        super.validateConfiguration();
+
+        final boolean isMultipleMigrationsPathsConfigured = getMigrationsPaths().size() > 1;
+        if (isMultipleMigrationsPathsConfigured)
+        {
+            getLog().warn("Multiple migration paths configured, using the first one: " + getMigrationsPaths().get(0));
+        }
     }
 }
