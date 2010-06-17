@@ -114,8 +114,8 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
      * Set this to <code>true</code> to insert base name of the migration script
      * (filename without extension) as its ID into column defined by
      * {@link #versionColumn} parameter.
-     *
-     * @parameter
+     * 
+     * @parameter expression="${baseNameAsId}"
      */
     private Boolean baseNameAsId = false;
 
