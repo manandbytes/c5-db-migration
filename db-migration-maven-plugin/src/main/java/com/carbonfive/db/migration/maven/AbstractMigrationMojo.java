@@ -4,7 +4,9 @@ import com.carbonfive.db.jdbc.DatabaseType;
 import com.carbonfive.db.jdbc.DatabaseUtils;
 import com.carbonfive.db.migration.DriverManagerMigrationManager;
 import com.carbonfive.db.migration.ResourceMigrationResolver;
+import com.carbonfive.db.migration.SimpleVersionExtractor;
 import com.carbonfive.db.migration.SimpleVersionStrategy;
+import com.carbonfive.db.migration.VersionExtractor;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -16,6 +18,24 @@ import static org.apache.commons.lang.StringUtils.*;
 
 public abstract class AbstractMigrationMojo extends AbstractMojo
 {
+
+    private enum VersionExtractorsEnum
+    {
+        BASE_NAME(BaseNameVersionExtractor.class), TIMESTAMP(SimpleVersionExtractor.class);
+
+        private final Class<? extends VersionExtractor> extarctor;
+
+        VersionExtractorsEnum(final Class<? extends VersionExtractor> anExtarctor)
+        {
+            extarctor = anExtarctor;
+        }
+
+        public VersionExtractor getExtarctor() throws InstantiationException, IllegalAccessException
+        {
+            return extarctor.newInstance();
+        }
+    }
+
     /**
      * @parameter expression="${project}"
      * @required
@@ -102,6 +122,19 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
 
         try
         {
+            final VersionExtractorsEnum versionExtractorClass = VersionExtractorsEnum.valueOf(versionExtractor);
+            versionExtarctorInstance = versionExtractorClass.getExtarctor();
+        } catch (IllegalArgumentException e)
+        {
+            throw new MojoExecutionException(
+                    "Version extractor type of '" + versionExtractor + "' is invalid.  Valid values: " + StringUtils.arrayToDelimitedString(VersionExtractorsEnum.values(), ", "));
+        } catch (Exception e)
+        {
+            throw new MojoExecutionException("Unable to instantiate version extarctor " + versionExtractor, e);
+        }
+
+        try
+        {
             Class.forName(driver);
         }
         catch (ClassNotFoundException e)
@@ -111,13 +144,14 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
     }
 
     /**
-     * Set this to <code>true</code> to insert base name of the migration script
-     * (filename without extension) as its ID into column defined by
-     * {@link #versionColumn} parameter.
-     * 
-     * @parameter expression="${baseNameAsId}"
+     * Which version extraction strategy to use to get ID of the migration
+     * script from its filename.
+     *
+     * @parameter expression="${versionExtractor}"
      */
-    private Boolean baseNameAsId = false;
+    private String versionExtractor = VersionExtractorsEnum.TIMESTAMP.name();
+
+    private VersionExtractor versionExtarctorInstance = null;
 
     public DriverManagerMigrationManager createMigrationManager()
     {
@@ -136,10 +170,7 @@ public abstract class AbstractMigrationMojo extends AbstractMojo
         path = separatorsToUnix(path);
 
         final ResourceMigrationResolver migrationResolver = new ResourceMigrationResolver(path);
-        if (baseNameAsId)
-        {
-            migrationResolver.setVersionExtractor(new BaseNameVersionExtractor());
-        }
+        migrationResolver.setVersionExtractor(versionExtarctorInstance);
         manager.setMigrationResolver(migrationResolver);
 
         SimpleVersionStrategy strategy = new SimpleVersionStrategy();
